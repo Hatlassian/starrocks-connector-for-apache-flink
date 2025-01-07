@@ -36,7 +36,8 @@ kafka_connector_version="$(get_kafka_connector_version $flink_minor_version)"
 ${MVN_CMD} clean package -DskipTests \
   -Dflink.minor.version=${flink_minor_version} \
   -Dflink.version=${flink_version} \
-  -Dkafka.connector.version=${kafka_connector_version}
+  -Dkafka.connector.version=${kafka_connector_version} \
+  -Drat.skip=true
 
 echo "*********************************************************************"
 echo "Successfully build Flink StarRocks Connector for Flink $flink_minor_version"

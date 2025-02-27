@@ -71,20 +71,105 @@ public class StarRocksSinkITTest extends StarRocksITTestBase {
     @Parameterized.Parameter(1)
     public boolean newSinkApi;
 
+//    @Test
+//    public void testDupKeyWriteFullColumnsInOrder() throws Exception {
+//        String ddl = "c0 INT, c1 FLOAT, c2 STRING, c4 ARRAY<STRING>, c3 array<struct<attribute_type:struct<value:string>,value_asset_attribute_value_string:struct<value:array<string>>,value_asset_attribute_value_object:struct<value:array<struct<value:string>>>>>";
+//        List<Row> testData = new ArrayList<>();
+//        testData.add(Row.of(1, 10.1f, "abc", new String[]{"a", "b"}));
+//        testData.add(Row.of(2, 20.2f, "def", new String[]{"c", "d"}));
+//        RowTypeInfo rowTypeInfo = new RowTypeInfo(
+//                new TypeInformation[]{Types.INT, Types.FLOAT, Types.STRING, Types.OBJECT_ARRAY(Types.STRING)},
+//                new String[]{"c0", "c1", "c2", "c4"});
+//        List<List<Object>> expectedData = Arrays.asList(
+//                Arrays.asList(1, 10.1f, "abc", "[\"a\",\"b\"]"),
+//                Arrays.asList(2, 20.2f, "def", "[\"c\",\"d\"]")
+//        );
+//        testDupKeyWriteBase(ddl, rowTypeInfo, testData, expectedData);
+//    }
+//
+//    @Test
+//    public void testDupKeyWriteFullColumnsInOrderFullStruct() throws Exception {
+//        String flinkDDL = "c0 INT, c1 FLOAT, c2 STRING, c3 ARRAY<ROW<attribute_type ROW<f0 STRING>, value_asset_attribute_value_string ROW<f0 ARRAY<STRING>>, value_asset_attribute_value_object ROW<f0 ARRAY<ROW<f0 STRING>>>>>, c4 ARRAY<STRING>";
+//        List<Row> testData = new ArrayList<>();
+//
+//        // Create complex data structures for the c3 column
+//        Row c3Data1 = Row.of(
+//                Row.of("type1"),  // attribute_type
+//                Row.of(new String[]{"attr1", "attr2"}),  // value_asset_attribute_value_string
+//                Row.of(new Row[]{Row.of("obj1"), Row.of("obj2")})  // value_asset_attribute_value_object
+//        );
+//
+//        Row c3Data2 = Row.of(
+//                Row.of("type2"),
+//                Row.of(new String[]{"attr3", "attr4"}),
+//                Row.of(new Row[]{Row.of("obj3"), Row.of("obj4")})
+//        );
+//
+//        testData.add(Row.of(1, 10.1f, "abc", new Row[]{c3Data1}, new String[]{"a", "b"}));
+//        testData.add(Row.of(2, 20.2f, "def", new Row[]{c3Data2}, new String[]{"c", "d"}));
+//
+//        RowTypeInfo rowTypeInfo = new RowTypeInfo(
+//                new TypeInformation[]{
+//                        Types.INT,
+//                        Types.FLOAT,
+//                        Types.STRING,
+//                        Types.OBJECT_ARRAY(
+//                                Types.ROW(
+//                                    Types.ROW(Types.STRING),  // attribute_type
+//                                    Types.ROW(Types.OBJECT_ARRAY(Types.STRING)),  // value_asset_attribute_value_string
+//                                    Types.ROW(Types.OBJECT_ARRAY(Types.ROW(Types.STRING)))  // value_asset_attribute_value_object
+//                                )
+//                        ),
+//                        Types.OBJECT_ARRAY(Types.STRING)
+//                },
+//                new String[]{"c0", "c1", "c2", "c3", "c4"});
+//
+//        List<List<Object>> expectedData = Arrays.asList(
+//                Arrays.asList(1, 10.1f, "abc", "[{\"attribute_type\":{\"value\":\"type1\"},\"value_asset_attribute_value_string\":{\"value\":[\"attr1\",\"attr2\"]},\"value_asset_attribute_value_object\":{\"value\":[{\"value\":\"obj1\"},{\"value\":\"obj2\"}]}}]", "[\"a\",\"b\"]"),
+//                Arrays.asList(2, 20.2f, "def", "[{\"attribute_type\":{\"value\":\"type2\"},\"value_asset_attribute_value_string\":{\"value\":[\"attr3\",\"attr4\"]},\"value_asset_attribute_value_object\":{\"value\":[{\"value\":\"obj3\"},{\"value\":\"obj4\"}]}}]", "[\"c\",\"d\"]")
+//        );
+//
+//        testDupKeyWriteBase(flinkDDL, rowTypeInfo, testData, expectedData);
+//    }
+
     @Test
-    public void testDupKeyWriteFullColumnsInOrder() throws Exception {
-        String ddl = "c0 INT, c1 FLOAT, c2 STRING";
+    public void testDupKeyWriteFullColumnsInOrderSimpleStruct() throws Exception {
+        // Update the flinkDDL to only include the attribute_type field in c3
+        String flinkDDL = "c0 INT, c1 FLOAT, c2 STRING, c3 ARRAY<ROW<attribute_type ROW<f0 STRING>>>, c4 ARRAY<STRING>";
         List<Row> testData = new ArrayList<>();
-        testData.add(Row.of(1, 10.1f, "abc"));
-        testData.add(Row.of(2, 20.2f, "def"));
-        RowTypeInfo rowTypeInfo = new RowTypeInfo(
-                new TypeInformation[]{Types.INT, Types.FLOAT, Types.STRING},
-                new String[]{"c0", "c1", "c2"});
-        List<List<Object>> expectedData = Arrays.asList(
-                Arrays.asList(1, 10.1f, "abc"),
-                Arrays.asList(2, 20.2f, "def")
+
+        // Simplify the data structures for the c3 column
+        Row c3Data1 = Row.of(
+                Row.of("\n\ttype1")  // attribute_type
         );
-        testDupKeyWriteBase(ddl, rowTypeInfo, testData, expectedData);
+
+        Row c3Data2 = Row.of(
+                Row.of("\n\ttype2")  // attribute_type
+        );
+
+        testData.add(Row.of(1, 10.1f, "abc", new Row[]{c3Data1}, new String[]{"a", "b"}));
+        testData.add(Row.of(2, 20.2f, "def", new Row[]{c3Data2}, new String[]{"c", "d"}));
+
+        RowTypeInfo rowTypeInfo = new RowTypeInfo(
+                new TypeInformation[]{
+                        Types.INT,
+                        Types.FLOAT,
+                        Types.STRING,
+                        Types.OBJECT_ARRAY(
+                                Types.ROW(
+                                        Types.ROW(Types.STRING)  // attribute_type
+                                )
+                        ),
+                        Types.OBJECT_ARRAY(Types.STRING)
+                },
+                new String[]{"c0", "c1", "c2", "c3", "c4"});
+
+        List<List<Object>> expectedData = Arrays.asList(
+                Arrays.asList(1, 10.1f, "abc", "[{\"attribute_type\":{\"f0\":\"\\n\\ttype1\"}}]", "[\"a\",\"b\"]"),
+                Arrays.asList(2, 20.2f, "def", "[{\"attribute_type\":{\"f0\":\"\\n\\ttype2\"}}]", "[\"c\",\"d\"]")
+        );
+
+        testDupKeyWriteBase(flinkDDL, rowTypeInfo, testData, expectedData);
     }
 
     @Test
@@ -114,8 +199,8 @@ public class StarRocksSinkITTest extends StarRocksITTestBase {
                 new TypeInformation[]{Types.INT, Types.STRING},
                 new String[]{"c0", "c2"});
         List<List<Object>> expectedData = Arrays.asList(
-                Arrays.asList(1, null, "abc"),
-                Arrays.asList(2, null, "def")
+                Arrays.asList(1, null, "abc", null, null),
+                Arrays.asList(2, null, "def", null, null)
         );
         testDupKeyWriteBase(ddl, rowTypeInfo, testData, expectedData);
     }
@@ -153,7 +238,7 @@ public class StarRocksSinkITTest extends StarRocksITTestBase {
         env.setParallelism(1);
         StreamTableEnvironment tEnv;
         tEnv = StreamTableEnvironment.create(env);
-        String createSQL = "CREATE TABLE sink(" + flinkDDL +
+        String createSQL = "CREATE TABLE `sink`(" + flinkDDL +
                 ") WITH ( " +
                 "'connector' = 'starrocks'," +
                 "'jdbc-url'='" + sinkOptions.getJdbcUrl() + "'," +
@@ -163,13 +248,21 @@ public class StarRocksSinkITTest extends StarRocksITTestBase {
                 "'database-name' = '" + DB_NAME + "'," +
                 "'table-name' = '" + sinkOptions.getTableName() + "'," +
                 "'username' = '" + sinkOptions.getUsername() + "'," +
-                "'password' = '" + sinkOptions.getPassword() + "'" +
+                "'password' = '" + sinkOptions.getPassword() + "'," +
+                // Get rowTypeInfo field names to comma separated string
+                "'sink.properties.column_separator' = '\t'," +
+                "'sink.properties.row_delimiter' = '\n'," +
+                "'sink.properties.columns' = '" + String.join(",", rowTypeInfo.getFieldNames()) + "'" +
                 ")";
         tEnv.executeSql(createSQL);
         DataStream<Row> srcDs = env.fromCollection(testData).returns(rowTypeInfo);
         Table in = tEnv.fromDataStream(srcDs);
-        tEnv.createTemporaryView("src", in);
-        tEnv.executeSql("INSERT INTO sink SELECT * FROM src").await();
+        tEnv.createTemporaryView("src", in);try {
+            tEnv.executeSql("INSERT INTO `sink` SELECT * FROM src").await();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
         List<List<Object>> actualData = scanTable(DB_CONNECTION, DB_NAME, tableName);
         verifyResult(expectedData, actualData);
     }
@@ -181,7 +274,10 @@ public class StarRocksSinkITTest extends StarRocksITTestBase {
                         "CREATE TABLE `%s`.`%s` (" +
                                 "c0 INT," +
                                 "c1 FLOAT," +
-                                "c2 STRING" +
+                                "c2 STRING," +
+//                                "c3 DATETIME NULL DEFAULT CURRENT_TIMESTAMP," +
+                                "c3 json," +
+                                "c4 ARRAY<STRING>" +
                                 ") ENGINE = OLAP " +
                                 "DUPLICATE KEY(c0) " +
                                 "DISTRIBUTED BY HASH (c0) BUCKETS 8 " +
